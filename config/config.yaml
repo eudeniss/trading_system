@@ -1,0 +1,236 @@
+# config/config.yaml
+# Configurações completas do sistema v7.0 - SEM STATE
+# CALIBRAGEM v3.1 (Data-Driven Completa) - 27/06/2025
+
+# ═══════════════════════════════════════════════════════════════
+# CONFIGURAÇÕES DO SISTEMA
+# ═══════════════════════════════════════════════════════════════
+
+system:
+  update_interval: 0.5
+  log_dir: 'logs'
+  state_dir: 'state'
+  checkpoint_interval: 60
+
+# ═══════════════════════════════════════════════════════════════
+# CONFIGURAÇÕES DO EXCEL
+# ═══════════════════════════════════════════════════════════════
+
+excel:
+  file: 'rtd_tapeReading.xlsx'
+  sheet: 'Sheet1'
+
+# ═══════════════════════════════════════════════════════════════
+# CONFIGURAÇÕES WDO (MINI DÓLAR FUTURO)
+# ═══════════════════════════════════════════════════════════════
+
+wdo:
+  trades:
+    range: 'B4:E103'
+    columns: 
+      time: 0
+      side: 1
+      price: 2
+      volume: 3
+  book:
+    bid_range: 'N4:Q13'
+    ask_range: 'R4:U13'
+  contract_multiplier: 5
+
+# ═══════════════════════════════════════════════════════════════
+# CONFIGURAÇÕES DOL (DÓLAR CHEIO)
+# ═══════════════════════════════════════════════════════════════
+
+dol:
+  trades:
+    range: 'H4:K103'
+    columns: 
+      time: 0
+      side: 1
+      price: 2
+      volume: 3
+  book:
+    bid_range: 'X4:AA13'
+    ask_range: 'AB4:AE13'
+  contract_multiplier: 5 # Nota: O multiplicador do DOL Cheio é 25, mas mantido em 5 para consistência com o WDO. Ajustar se a lógica for por contrato.
+
+# ═══════════════════════════════════════════════════════════════
+# CONFIGURAÇÕES DE ARBITRAGEM
+# ═══════════════════════════════════════════════════════════════
+
+arbitrage:
+  min_profit: 15.0
+  history_size: 100
+  signal_cooldown: 30
+  point_value: 10.0
+
+# ═══════════════════════════════════════════════════════════════
+# CONFIGURAÇÕES DE TAPE READING (CALIBRAGEM DATA-DRIVEN v3.1)
+# ═══════════════════════════════════════════════════════════════
+
+tape_reading:
+  buffer_size: 10000
+
+  # Thresholds principais (CALIBRADOS VIA ANÁLISE DE LOGS)
+  cvd_threshold: 150              # Saldo de agressão para considerar um movimento relevante
+  cvd_roc_period: 15
+  
+  # Detecção de padrões (CALIBRADOS VIA ANÁLISE DE LOGS)
+  pace_anomaly_stdev: 2.0         # Retornado para 2.0 para maior sensibilidade a mudanças de ritmo
+  absorption_threshold: 282       # Baseado na análise estatística de volume do WDO
+  exhaustion_volume: 314          # Baseado na análise estatística de volume do WDO
+  iceberg_repetitions: 4          # Mantido de v2.1
+  iceberg_min_volume: 59          # Baseado no volume mediano do WDO para realismo
+  concentration_threshold: 0.40   # Mantido de v2.1
+  pressure_threshold: 0.75        # Mantido de v2.1
+  spike_multiplier: 3.0           # Sugerido pelo script de análise
+  divergence_threshold: 209       # Baseado na análise estatística de volume do WDO
+  extreme_threshold: 250          # Definido como um valor intermediário entre absorption e exhaustion
+
+# ═══════════════════════════════════════════════════════════════
+# CONFIGURAÇÕES DE GERENCIAMENTO DE RISCO
+# ═══════════════════════════════════════════════════════════════
+
+risk_management:
+  # Limites de frequência de sinais
+  max_signals_per_minute: 9999   #valor padrão 10
+  max_signals_per_hour: 99999    #valor padrão 100
+  max_confluence_per_hour: 9999  #valor padrão 20
+
+  # Qualidade e performance
+  signal_quality_threshold: 0.35  # AJUSTADO DE 0.6 PARA 0.35!
+  consecutive_losses_limit: 5
+
+  # Limites financeiros
+  max_drawdown_percent: 2.0
+  emergency_stop_loss: 1000.0
+
+  # Circuit breakers
+  circuit_breaker_threshold: 3
+  circuit_breaker_cooldown: 300
+
+  # Pesos para avaliação de qualidade
+  quality_weights:
+    source_weight: 1.5
+    level_weight: 0.8
+    details_weight: 1.5
+    pattern_weight: 1.2 # Aumentado o peso do padrão, já que os thresholds são baseados em dados
+
+  # Controle de exposição
+  max_concurrent_signals: 5
+  signal_timeout: 60
+
+  # Cooldowns por padrão
+  pattern_cooldown:
+    iceberg: 30
+    momentum_extremo: 20
+    pressao_compra: 15
+    pressao_venda: 15
+    divergencia_alta: 25
+    divergencia_baixa: 25
+    escora_detectada: 20
+    volume_spike: 15
+
+# ═══════════════════════════════════════════════════════════════
+# DETECÇÃO DE MANIPULAÇÃO
+# ═══════════════════════════════════════════════════════════════
+
+manipulation_detection:
+  # Detecção de LAYERING (paredes falsas no book)
+  layering:
+    enabled: true
+    min_levels: 4
+    min_volume_per_level: 50
+    uniformity_threshold: 0.10
+
+  # Detecção de WASH TRADE - DESABILITADO
+  wash_trade:
+    enabled: false
+
+  # Detecção de SPOOFING (book desbalanceado)
+  spoofing:
+    enabled: true
+    imbalance_ratio: 5.0
+    levels_to_check: 5
+
+  # Ações automáticas
+  actions:
+    block_signals: true
+    alert_user: true
+    log_details: true
+
+  # Níveis de confiança quando detecta anomalia
+  confidence:
+    layering_penalty: 0.4
+    spoofing_penalty: 0.3
+
+# ═══════════════════════════════════════════════════════════════
+# CONFIGURAÇÕES DE DISPLAY
+# ═══════════════════════════════════════════════════════════════
+
+display:
+  book_levels: 5
+  trade_history: 20
+  signal_history: 20
+  refresh_rate: 0.5
+
+# ═══════════════════════════════════════════════════════════════
+# REGIME DE MERCADO (ADAPTATIVO)
+# ═══════════════════════════════════════════════════════════════
+
+market_regime:
+  lookback_period: 300
+  update_interval: 30
+  adaptive_params:
+    trend_threshold: 0.001
+    volatility_multiplier: 1.5
+    volume_spike_threshold: 3.0
+    liquidity_depth_levels: 5
+
+# ═══════════════════════════════════════════════════════════════
+# CALIBRAÇÃO AUTOMÁTICA (DESABILITADA)
+# ═══════════════════════════════════════════════════════════════
+
+calibration:
+  enabled: false
+  initial_period: 300
+  recalibration_interval: 3600
+  min_samples: 1000
+
+# ═══════════════════════════════════════════════════════════════
+# ESTATÍSTICAS E AGREGAÇÃO
+# ═══════════════════════════════════════════════════════════════
+
+statistics:
+  aggregation_interval: 1.0
+  history_window: 3600
+  maintenance_interval: 600
+  metrics:
+    - cvd_cumulative
+    - volume_profile
+    - pace_history
+    - spread_history
+    - pattern_frequencies
+
+# ═══════════════════════════════════════════════════════════════
+# NOTAS E LEMBRETES
+# ═══════════════════════════════════════════════════════════════
+
+# SISTEMA OPERANDO SEM STATE:
+# - CVD sempre começa do zero
+# - Sem persistência entre sessões
+# - Métricas resetam ao fechar
+#
+# DETECÇÃO DE MANIPULAÇÃO:
+# - Focada apenas no que VEMOS (book)
+# - Não tentamos detectar wash trades
+# - Mensagens claras e acionáveis
+#
+# FILOSOFIA v3.1:
+# "Calibragem baseada em dados estatísticos extraídos dos logs
+# de operação para refletir o comportamento real do mercado."
+#
+# RISK MANAGEMENT:
+# - Threshold ajustado para 0.35 (era 0.6)
+# - Sinais rejeitados agora aparecem como avisos
+# - Debug mode disponível com --debug-risk
