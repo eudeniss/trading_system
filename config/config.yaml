@@ -1,0 +1,236 @@
+# ===================================================================
+# Trading System v8.0 - Configuração com Mercado Calculado
+# ===================================================================
+
+# ╔═══════════════════════════════════════════════════════════════╗
+# ║                     CONFIGURAÇÕES GERAIS                      ║
+# ╚═══════════════════════════════════════════════════════════════╝
+system:
+  environment: "production"
+  update_interval: 0.1
+  log_dir: "logs"
+  log_level: "INFO"
+  
+  # FASE 1.1: Robustez e Resiliência
+  max_consecutive_errors: 5
+  maintenance_interval_seconds: 600
+  daily_reset_time: "18:00"
+  min_backoff_seconds: 1
+  max_backoff_seconds: 60
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║                      FONTE DE DADOS (EXCEL)                 ║
+# ╚═══════════════════════════════════════════════════════════╝
+excel:
+  file: "rtd_tapeReading.xlsx"
+  sheet: "Sheet1"
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║                  CONFIGURAÇÕES DOS ATIVOS                   ║
+# ╚═══════════════════════════════════════════════════════════╝
+wdo:
+  trades:
+    range: 'B4:E103'
+    columns: { time: 0, side: 1, price: 2, volume: 3 }
+  book:
+    bid_range: 'N4:Q13'
+    ask_range: 'R4:U13'
+
+dol:
+  trades:
+    range: 'H4:K103'
+    columns: { time: 0, side: 1, price: 2, volume: 3 }
+  book:
+    bid_range: 'X4:AA13'
+    ask_range: 'AB4:AE13'
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║           MERCADO CALCULADO (NOVA ESTRATÉGIA)               ║
+# ╚═══════════════════════════════════════════════════════════╝
+calculated_market:
+  ptax_api_url: "https://api.bcb.gov.br/dados/serie/bcdata.sgs.1/dados/ultimos/5?formato=json"
+  cupom_cambial: 25
+  volatilidade_unidade: 12.5
+  tolerancia_proximidade: 3.0
+  multiplicadores:
+    SOFRER_2X: 1.60
+    SOFRER: 1.25
+    DEFENDO: 0.45
+    PIVOT: 0.00
+    SUPORTE: -0.45
+    DEVENDO: -1.25
+    SOFGRE: -1.60
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║                      TAPE READING                         ║
+# ╚═══════════════════════════════════════════════════════════╝
+tape_reading:
+  analysis_cache_ttl: 0.5
+  buffer_size: 10000
+  cvd_history_size: 1000
+  cvd_roc_period: 15
+  signal_quality_threshold: 0.35
+
+  # Parâmetros dos Padrões
+  pace_baseline_samples: 100
+  pace_anomaly_stdev: 2.0
+  pace_window_seconds: 10
+  concentration_threshold: 0.40
+  absorption_threshold: 282
+  exhaustion_volume: 314
+  iceberg_repetitions: 4
+  iceberg_min_volume: 59
+  divergence_threshold: 209
+  extreme_threshold: 250
+  pressure_threshold: 0.75
+  pressure_min_volume: 100
+  spike_multiplier: 3.0
+  spike_history_size: 100
+
+  # Cooldown por Padrão (em segundos)
+  pattern_cooldown:
+    default: 30
+    PRESSAO_COMPRA: 15
+    PRESSAO_VENDA: 15
+    MOMENTUM_EXTREMO: 20
+    ESCORA_DETECTADA: 30
+    DIVERGENCIA_ALTA: 25
+    DIVERGENCIA_BAIXA: 25
+    ICEBERG: 30
+    VOLUME_SPIKE: 15
+    PACE_ANOMALY: 20
+    INSTITUTIONAL_FOOTPRINT: 60
+    HIDDEN_LIQUIDITY: 45
+    MULTIFRAME_DIVERGENCE: 40
+    MULTIFRAME_CONFLUENCE: 35
+    TRAP_DETECTED: 30
+    BOOK_PULLING: 10
+    BOOK_STACKING: 10
+    FLASH_ORDER: 5
+    IMBALANCE_SHIFT: 15
+  
+  # FASE 4.1: Confirmação de Padrões
+  pattern_confirmation:
+    enabled: true
+    max_pending: 50
+    default_timeout: 30
+    check_interval: 1.0
+    patterns:
+      ESCORA_DETECTADA: { timeout: 45, min_tests: 2, test_threshold: 0.7 }
+      DIVERGENCIA_ALTA: { timeout: 30, confirmation_bars: 3, price_confirmation: true }
+      DIVERGENCIA_BAIXA: { timeout: 30, confirmation_bars: 3, price_confirmation: true }
+      MOMENTUM_EXTREMO: { timeout: 20, requires_continuation: true, min_continuation_cvd: 50 }
+      INSTITUTIONAL_FOOTPRINT: { timeout: 60, min_persistence: 30, volume_threshold: 0.3 }
+      HIDDEN_LIQUIDITY: { timeout: 40, reload_confirmations: 2, min_hidden_volume: 500 }
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║                      MÓDULOS AVANÇADOS                      ║
+# ╚═══════════════════════════════════════════════════════════╝
+# FASE 4.2: Dinâmica do Book
+book_dynamics:
+  snapshot_history: 20
+  pulling_threshold: 0.5
+  stacking_threshold: 2.0
+  flash_order_seconds: 2
+  imbalance_shift: 0.3
+
+# FASE 5.1: Pegada Institucional
+institutional:
+  min_trades: 50
+  iceberg_tolerance: 0.1
+  rhythm_threshold: 0.7
+  institutional_volume_pct: 0.3
+  time_window: 300
+  iceberg_sizes: [10, 20, 25, 50, 100, 200, 250, 500, 1000]
+
+# FASE 5.2: Liquidez Oculta
+hidden_liquidity:
+  min_excess_ratio: 1.5
+  reload_time: 2
+  level_tolerance: 0.5
+  min_hidden_volume: 500
+
+# FASE 5.3: Análise Multi-Timeframe
+multiframe:
+  micro_seconds: 60
+  short_seconds: 300
+  medium_seconds: 900
+  long_seconds: 1800
+  divergence_threshold: 0.3
+  confluence_threshold: 0.7
+  regime_change_threshold: 0.5
+
+# FASE 5.4: Detector de Armadilhas (Traps)
+trap_detection:
+  breakout_threshold: 0.002
+  reversal_threshold: 0.7
+  volume_spike: 3.0
+  stop_hunt_range: 0.003
+  trap_window_seconds: 300
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║                   GERENCIAMENTO DE RISCO                    ║
+# ╚═══════════════════════════════════════════════════════════╝
+risk_management:
+  signal_limits:
+    max_per_minute: 10
+    max_per_hour: 100
+    max_confluence_per_hour: 20
+    max_concurrent_signals: 5
+    signal_timeout: 60
+    
+  financial_limits:
+    consecutive_losses_limit: 5
+    max_drawdown_pct: 2.0
+    emergency_stop_loss: 1000.0
+  
+  circuit_breaker_cooldown: 300
+  
+  quality_weights:
+    source_weight: 1.5
+    level_weight: 0.8
+    details_weight: 1.5
+    pattern_weight: 1.2
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║                   DETECÇÃO DE MANIPULAÇÃO                   ║
+# ╚═══════════════════════════════════════════════════════════╝
+manipulation_detection:
+  actions: { block_signals: true, log_details: true }
+  layering: { enabled: true, min_levels: 4, min_volume_per_level: 50, uniformity_threshold: 0.10 }
+  spoofing: { enabled: true, levels_to_check: 5, imbalance_ratio: 5.0 }
+  confidence: { layering_penalty: 0.4, spoofing_penalty: 0.3 }
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║                    DETECÇÃO DE REGIME                       ║
+# ╚═══════════════════════════════════════════════════════════╝
+market_regime:
+  lookback_period: 300
+  update_interval: 30
+  adaptive_params:
+    trend_threshold: 0.001
+    volatility_multiplier: 1.5
+    volume_spike_threshold: 3.0
+    liquidity_depth_levels: 5
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║                 PERFORMANCE & MONITORAMENTO                 ║
+# ╚═══════════════════════════════════════════════════════════╝
+performance:
+  sample_interval: 1.0
+  history_size: 1000
+  thresholds:
+    cpu_percent: 80
+    memory_percent: 85
+    latency_ms: 100
+    trades_per_second: 10
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║                   LOGS E DEBUG                            ║
+# ╚═══════════════════════════════════════════════════════════╝
+logging:
+  flush_interval: 5
+  rotation: { max_size_mb: 100, backup_count: 5 }
+
+debug:
+  enabled: false
